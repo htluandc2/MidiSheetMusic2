@@ -19,6 +19,7 @@ import com.midisheetmusic.MidiHandlingActivity;
 import com.midisheetmusic.MidiNote;
 import com.midisheetmusic.MidiOptions;
 import com.midisheetmusic.MidiPlayer;
+import com.midisheetmusic.MidiPlayerTranscription;
 import com.midisheetmusic.MidiTrack;
 import com.midisheetmusic.Piano;
 import com.midisheetmusic.R;
@@ -45,7 +46,7 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
     public static final int ID_LOOP_START  = 11;
     public static final int ID_LOOP_END    = 12;
 
-    private MidiPlayer player;      // The play/stop/rewind toolbar
+    private MidiPlayerTranscription player;      // The play/stop/rewind toolbar
     private Piano piano;            // The piano at the top
     private SheetMusic sheet;       // The sheet music
     private LinearLayout layout;    // The layout
@@ -122,7 +123,7 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
 
     private void createViews() {
         layout = findViewById(R.id.content_layout_test);
-        player = new MidiPlayer(this);
+        player = new MidiPlayerTranscription(this);
 
         piano  = new Piano(this);
         layout.addView(piano);
@@ -166,11 +167,11 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
 
     @Override
     public void OnMidiNote(int note, boolean pressed) {
-        player.OnMidiNote(note, true);
     }
 
     public void onClickSimulation(View view) {
-        OnMidiNote(67, true);
+        int notes[] = new int[]{60, 64, 67};
+        player.OnMidiMultipleNotes(notes, true);
     }
 
     private void printMidiFile() {
