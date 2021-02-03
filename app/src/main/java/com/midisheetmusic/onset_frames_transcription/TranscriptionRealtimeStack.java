@@ -75,9 +75,6 @@ public class TranscriptionRealtimeStack implements Transciption {
             Log.e(LOG_TAG, "Load TF-Lite file failed.");
             e.printStackTrace();
         }
-//        if(tfLiteModel == null) {
-//            Log.d(LOG_TAG, "TF-Lite is null.");
-//        }
     }
 
     public void setOnsetsFramesTranscriptionRealtimeListener(
@@ -238,6 +235,7 @@ public class TranscriptionRealtimeStack implements Transciption {
             Log.d(LOG_TAG, String.format("Time processing %d ms", lastProcessingTimeMs));
 
             threshPianoRolls(pianoRolls[0]);
+            removeDuplicateRolls(pianoRolls[0]);
             copyPianoRollsToResult(pianoRolls[0]);
 
             Utils.printTranscriptionNote(

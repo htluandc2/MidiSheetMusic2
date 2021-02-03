@@ -1,6 +1,7 @@
 package com.midisheetmusic;
 
 import android.app.Activity;
+import android.graphics.Color;
 import android.os.SystemClock;
 import android.util.Log;
 
@@ -16,9 +17,10 @@ import java.util.List;
 public class MidiPlayerTranscription extends MidiPlayer {
 
     private static final String LOG_TAG = MidiPlayerTranscription.class.getSimpleName();
-    private int numWrongNotes = 0;
     // All notes from all tracks
     private List<MidiNote> notes;
+    private List<Integer> prevWrongNotes;
+    private int currentNoteIndex;
 
     public MidiPlayerTranscription(Activity activity) {
         super(activity);
@@ -32,6 +34,8 @@ public class MidiPlayerTranscription extends MidiPlayer {
     public void SetMidiFile(MidiFile file, MidiOptions opt, SheetMusic s) {
         super.SetMidiFile(file, opt, s);
         notes = new ArrayList<MidiNote>();
+        prevWrongNotes = new ArrayList<Integer>();
+
         for(MidiTrack track: midifile.getTracks()) {
             for(MidiNote note: track.getNotes()) {
                 notes.add(note);
@@ -55,10 +59,42 @@ public class MidiPlayerTranscription extends MidiPlayer {
             }
         }
         Log.d(LOG_TAG, results);
+        currentNoteIndex = 0;
     }
 
+    /**
+     * Người dùng nhập 1 chuỗi các notes. Các note nhập sai sẽ sáng màu đỏ.
+     * @param notes
+     * @param pressed
+     */
     public void OnMidiMultipleNotes(int notes[], boolean pressed) {
         if(!pressed) return;
+        for(int i = 0; i < prevWrongNotes.size(); i++) {
+            piano.UnShadeOneNote(prevWrongNotes.get(i));
+        }
+        prevWrongNotes.clear();
 
+        List<MidiNote> currentNotes = getCurrentNotes();
+        boolean currentNotesBool[] = new boolean[200];
+        for(MidiNote n: currentNotes) {
+            currentNotesBool[n.getNumber()] = true;
+        }
+
+        for(int n: notes) {
+            if(!currentNotesBool[n]) {
+                piano.ShadeOneNote(n, Color.RED);
+            }
+        }
+    }
+
+    public List<MidiNote> getCurrentNotes() {
+        int minStartTime = notes.get(currentNoteIndex).getStartTime();
+        List<MidiNote> currentNotes = new ArrayList<MidiNote>();
+        for(int i = currentNoteIndex; i < notes.size(); i++) {
+            if (notes.get(i).getStartTime() == minStartTime) {
+                currentNotes.add(notes.get(i));
+            }
+        }
+        return currentNotes;
     }
 }

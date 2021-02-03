@@ -10,24 +10,6 @@ public class Utils {
 
     private static final String LOG_TAG = Utils.class.getSimpleName();
 
-    public static void printPrettyArr(String name, float[][] arr) {
-        int maxSize = 10;
-
-        Log.d(LOG_TAG, name + ": ");
-        Log.d(LOG_TAG, name + " - Array shape: [" + arr.length + ", " + arr[0].length + "]");
-
-        for(int i = 0; i < arr.length; i++) {
-            String s = name + " - ";
-            for(int j = 0; j < maxSize; j++) {
-                String sNumber = String.format("%f", arr[i][j]);
-                s += sNumber + "\t";
-            }
-            s += "...";
-            Log.d(LOG_TAG, s);
-        }
-        Log.d(LOG_TAG, "End of: " + name);
-    }
-
     public static void printTranscriptionNote(
             String LOG_TAG,
             float[][] pianoRolls,
@@ -37,6 +19,7 @@ public class Utils {
         int minNote = 15;   // C2
         int maxNote = 51;   // C5
 
+        String results = String.format("Current frame: %d\n", initFrame);
         for(int i = 0; i < pianoRolls.length; i++) {
             int sr = TranscriptionRealtimeStack.SAMPLE_RATE;
             int hopSize = TranscriptionRealtimeStack.HOP_SIZE;
@@ -58,36 +41,18 @@ public class Utils {
                 }
                 frameStr += noteStr;
             }
-            Log.d(LOG_TAG, frameStr);
+            results += frameStr;
+            results += "\n";
         }
-        if(isSeparate) {
-            Log.d(LOG_TAG, "Separate");
-        }
+        Log.d(LOG_TAG, results);
     }
 
     public static void printTranscriptionNoteToFile(File file,
-                                                    float[][] pianoRolls, float threshold) {
-        int minNote = 15;   // C2
-        int maxNote = 51;   // C5
+                                                    float[][] pianoRolls,
+                                                    float threshold,
+                                                    int initFrame,
+                                                    boolean isSeparate) {
 
-        for(int i = 0; i < pianoRolls.length; i++) {
-            float[] frame = pianoRolls[i];
-            String frameStr = "";
-            for(int j = minNote; j <= maxNote; j++) {
-                float note = frame[j];
-                String noteStr = "";
-                if(note > threshold) {
-                    noteStr = notename(j, false);
-                    if(noteStr.length() == 2) {
-                        noteStr += " ";
-                    }
-                }
-                else {
-                    noteStr = "|  ";
-                }
-                frameStr += noteStr;
-            }
-        }
     }
 
     public static String notename(int n, boolean space) {
