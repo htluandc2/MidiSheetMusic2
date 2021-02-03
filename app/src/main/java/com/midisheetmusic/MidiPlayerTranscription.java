@@ -18,7 +18,7 @@ public class MidiPlayerTranscription extends MidiPlayer {
 
     private static final String LOG_TAG = MidiPlayerTranscription.class.getSimpleName();
     // All notes from all tracks
-    private List<MidiNote> notes;
+    private List<MidiNote> allNotes;
     private List<Integer> prevWrongNotes;
     private int currentNoteIndex;
 
@@ -33,19 +33,19 @@ public class MidiPlayerTranscription extends MidiPlayer {
     @Override
     public void SetMidiFile(MidiFile file, MidiOptions opt, SheetMusic s) {
         super.SetMidiFile(file, opt, s);
-        notes = new ArrayList<MidiNote>();
+        allNotes = new ArrayList<MidiNote>();
         prevWrongNotes = new ArrayList<Integer>();
 
         for(MidiTrack track: midifile.getTracks()) {
             for(MidiNote note: track.getNotes()) {
-                notes.add(note);
+                allNotes.add(note);
             }
         }
-        Collections.sort(notes, new MidiNote(0, 0, 0, 0));
+        Collections.sort(allNotes, new MidiNote(0, 0, 0, 0));
         String results = "Onset Events:\n";
-        int currentStartTime = notes.get(0).getStartTime();
-        for(int i = 0; i < notes.size(); i++) {
-            MidiNote currentNote = notes.get(i);
+        int currentStartTime = allNotes.get(0).getStartTime();
+        for(int i = 0; i < allNotes.size(); i++) {
+            MidiNote currentNote = allNotes.get(i);
             String notename = Librosa.midiToNoteName(currentNote.getNumber());
             if(currentNote.getStartTime() > currentStartTime) {
                 results += "\n";
@@ -75,26 +75,65 @@ public class MidiPlayerTranscription extends MidiPlayer {
         prevWrongNotes.clear();
 
         List<MidiNote> currentNotes = getCurrentNotes();
-        boolean currentNotesBool[] = new boolean[200];
-        for(MidiNote n: currentNotes) {
-            currentNotesBool[n.getNumber()] = true;
+        if(currentNotes.size() == 0) {
+            Log.d(LOG_TAG, "Done a song!!!");
         }
 
-        for(int n: notes) {
-            if(!currentNotesBool[n]) {
-                piano.ShadeOneNote(n, Color.RED);
+        boolean isWrong[] = new boolean[notes.length];
+        for(int i = 0; i < notes.length; i++) {
+            boolean inCurrentNotes = false;
+            for(int j = 0; j < currentNotes.size(); j++) {
+                if(notes[i] == currentNotes.get(j).getNumber()) {
+                    inCurrentNotes = true;
+                }
             }
+            isWrong[i] = !inCurrentNotes;
+            if(isWrong[i]) {
+                piano.ShadeOneNote(notes[i], Color.RED);
+                prevWrongNotes.add(notes[i]);
+            }
+        }
+
+        boolean isPressed[] = new boolean[currentNotes.size()];
+        boolean isCompleted = true;  // Đã gõ tất cả các note cùng onsets
+        for(int i = 0; i < currentNotes.size(); i++) {
+            for(int j = 0; j < notes.length; j++) {
+                if(currentNotes.get(i).getNumber() == notes[j]) {
+                    isPressed[i] = true;
+                }
+                else {
+                    isCompleted = false;
+                }
+            }
+        }
+        if(isCompleted) {
+            sheet.ShadeNotes((int) currentPulseTime, (int) prevPulseTime, SheetMusic.ImmediateScroll);
+
+            currentNoteIndex = getNextNoteIndex();
+            prevPulseTime = currentNotes.get(0).getStartTime();
+            currentPulseTime = allNotes.get(currentNoteIndex).getStartTime();
         }
     }
 
     public List<MidiNote> getCurrentNotes() {
-        int minStartTime = notes.get(currentNoteIndex).getStartTime();
+        int minStartTime = allNotes.get(currentNoteIndex).getStartTime();
         List<MidiNote> currentNotes = new ArrayList<MidiNote>();
-        for(int i = currentNoteIndex; i < notes.size(); i++) {
-            if (notes.get(i).getStartTime() == minStartTime) {
-                currentNotes.add(notes.get(i));
+        for(int i = currentNoteIndex; i < allNotes.size(); i++) {
+            if (allNotes.get(i).getStartTime() == minStartTime) {
+                currentNotes.add(allNotes.get(i));
             }
         }
         return currentNotes;
+    }
+
+    public int getNextNoteIndex() {
+        int minStartTime = allNotes.get(currentNoteIndex).getStartTime();
+        List<MidiNote> currentNotes = new ArrayList<MidiNote>();
+        for(int i = currentNoteIndex; i < allNotes.size(); i++) {
+            if (allNotes.get(i).getStartTime() == minStartTime) {
+                currentNotes.add(allNotes.get(i));
+            }
+        }
+        return currentNoteIndex + currentNotes.size();
     }
 }

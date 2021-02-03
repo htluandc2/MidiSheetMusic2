@@ -33,6 +33,8 @@ import com.midisheetmusic.onset_frames_transcription.librosa.Librosa;
 import com.midisheetmusic.sheets.ClefSymbol;
 import com.mikepenz.materialdrawer.Drawer;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.CRC32;
 
 public class TestActivity extends MidiHandlingActivity implements TranscriptionRealtimeListener {
@@ -201,7 +203,19 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
 
     @Override
     public void onGetPianoRolls(float[][] pianoRolls, int initFrame) {
-
+        for(int i = 0; i < pianoRolls.length; i++) {
+            List<Integer> noteList = new ArrayList<Integer>();
+            for(int j = 0; j < pianoRolls[i].length; j++) {
+                if(pianoRolls[i][j] > 0.5f) {
+                    noteList.add(j + 21);
+                }
+            }
+            int notes[] = new int[noteList.size()];
+            for(int j = 0; j < noteList.size(); j++) {
+                notes[j] = noteList.get(j);
+            }
+            player.OnMidiMultipleNotes(notes, true);
+        }
     }
 
     public void onClickButtons(View view) {
