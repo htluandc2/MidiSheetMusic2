@@ -173,7 +173,7 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
 
     public void onClickSimulation(View view) {
         int notes[] = new int[]{60, 64, 67};
-        player.OnMidiMultipleNotes(notes, true);
+        player.OnMidiMultipleNotes(notes, true, 0);
     }
 
     private void printMidiFile() {
@@ -210,11 +210,14 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
                     noteList.add(j + 21);
                 }
             }
+            if(noteList.size() == 0) {
+                return;
+            }
             int notes[] = new int[noteList.size()];
             for(int j = 0; j < noteList.size(); j++) {
                 notes[j] = noteList.get(j);
             }
-            player.OnMidiMultipleNotes(notes, true);
+            player.OnMidiMultipleNotes(notes, true, initFrame+i);
         }
     }
 

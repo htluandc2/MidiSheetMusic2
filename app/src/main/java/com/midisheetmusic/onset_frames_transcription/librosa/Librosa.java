@@ -32,8 +32,6 @@ public class Librosa {
         return notename(noteIndex);
     }
 
-
-
     public static int midiToNoteIndex(int pitch) {
         return pitch - 21;
     }
