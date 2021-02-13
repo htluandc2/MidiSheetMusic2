@@ -43,10 +43,6 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
     private static final String LOG_TAG = TestActivity.class.getSimpleName();
 
     public static final String MidiTitleID = "MidiTitleID";
-    public static final int settingsRequestCode = 1;
-    public static final int ID_LOOP_ENABLE = 10;
-    public static final int ID_LOOP_START  = 11;
-    public static final int ID_LOOP_END    = 12;
 
     private MidiPlayerTranscription player;      // The play/stop/rewind toolbar
     private Piano piano;            // The piano at the top
@@ -55,7 +51,6 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
     private MidiFile midiFile;      // The midi file to play
     private MidiOptions options;    // The options for sheet music and sound
     private long midiCRC;           // CRC of the midi bytes
-    private Drawer drawer;
 
     // For transcription methods
     private Transciption transcription;
@@ -109,7 +104,6 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
         options.shade2Color= settings.getInt("shade2Color", options.shade2Color);
         options.showPiano  = settings.getBoolean("showPiano", true);
         String json = settings.getString(""+midiCRC, null);
-        Log.d(LOG_TAG, "Settings: " + json);
         MidiOptions savedOptions = MidiOptions.fromJson(json);
 
         createViews();
@@ -164,7 +158,6 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
 
     @Override
     public void OnMidiDeviceStatus(boolean connected) {
-
     }
 
     @Override
@@ -172,26 +165,27 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
     }
 
     public void onClickSimulation(View view) {
-        int notes[] = new int[]{60, 64, 67};
-        player.OnMidiMultipleNotes(notes, true, 0);
-    }
+        player.startTracking();
 
-    private void printMidiFile() {
-        Log.d(LOG_TAG, "Midi Track: " + midiFile.getTracks().size());
-        for(int i = 0; i < midiFile.getTracks().size(); i++) {
-            MidiTrack track = midiFile.getTracks().get(i);
-            String results = "Note in Track:\n";
-            for(MidiNote note: track.getNotes()) {
-                results += "\t";
-                results += "Note in list: " + i + ", ";
-                results += "Note number: " + note.getNumber() + ", ";
-                results += "Note name: " + Librosa.midiToNoteName(note.getNumber()) + ", ";
-                results += "Start: " + note.getStartTime() + "\t";
-                results += "Duration: " + note.getDuration();
-                results += "\n";
-            }
-            Log.d(LOG_TAG, results);
-        }
+        int c4 = Librosa.notenameToMidi("C4");
+        String results = "";
+        results += c4;
+        results.trim(); // Xóa space ở 2 đầu
+        player.putEvents(results);
+
+        int g3 = Librosa.notenameToMidi("G3");
+        results = "";
+        results += g3;
+        player.putEvents(results);
+
+        results = "";
+        results += c4;
+        player.putEvents(results);
+
+        results = "";
+        results += g3;
+        player.putEvents(results);
+
     }
 
     protected void requestMicrophonePermission() {
@@ -203,21 +197,16 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
 
     @Override
     public void onGetPianoRolls(float[][] pianoRolls, int initFrame) {
+        Utils.printTranscriptionNote(LOG_TAG, pianoRolls, 0.5f, initFrame);
         for(int i = 0; i < pianoRolls.length; i++) {
-            List<Integer> noteList = new ArrayList<Integer>();
+            String notes = "";
             for(int j = 0; j < pianoRolls[i].length; j++) {
-                if(pianoRolls[i][j] > 0.5f) {
-                    noteList.add(j + 21);
+                if(pianoRolls[i][j] == 1.0f) {
+                    notes += (j + 21) + " ";
                 }
             }
-            if(noteList.size() == 0) {
-                return;
-            }
-            int notes[] = new int[noteList.size()];
-            for(int j = 0; j < noteList.size(); j++) {
-                notes[j] = noteList.get(j);
-            }
-            player.OnMidiMultipleNotes(notes, true, initFrame+i);
+            notes.trim();
+            player.putEvents(notes);
         }
     }
 
@@ -229,10 +218,12 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
 
             transcription.startRecording();
             transcription.startRecognition();
+            player.startTracking();
         }
         if(view.getId() == R.id.btnStop) {
             transcription.stopRecognition();
             transcription.stopRecording();
+            player.stopTracking();
 
             btnRecord.setEnabled(true);
             btnStop.setEnabled(false);

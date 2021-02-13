@@ -2,31 +2,45 @@ package com.midisheetmusic;
 
 import android.app.Activity;
 import android.graphics.Color;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.util.Log;
 
 import com.midisheetmusic.onset_frames_transcription.TranscriptionRealtimeStack;
-import com.midisheetmusic.onset_frames_transcription.Utils;
 import com.midisheetmusic.onset_frames_transcription.librosa.Librosa;
-import com.midisheetmusic.sheets.ChordSymbol;
-import com.midisheetmusic.sheets.MusicSymbol;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 public class MidiPlayerTranscription extends MidiPlayer {
 
     private static final String LOG_TAG = MidiPlayerTranscription.class.getSimpleName();
+    private static final long MININUM_TIME_BETWEEN_FRAME_MS = 32;
+
+    // Queue to tracking piano events
+    private static final int QUEUE_SIZE = 1024 * 8;
+    private static BlockingQueue<String> queue = new ArrayBlockingQueue<String>(QUEUE_SIZE);
+
+    private Handler trackingHandler;
 
     // All notes from all tracks
     private List<MidiNote> allNotes;
     private List<Integer> prevWrongNotes;
     private List<Integer> prevCorrectNotes;
     private int currentNoteIndex;
+    private int currentNoteSize;
 
-    private int correctColor = Color.rgb(102, 255, 102);
+    boolean isTracking = false;
+    private Thread trackingThread;
+    private static int currentFrame = 0;
+
+    private List<Integer> currentPressedNotes;
+
+    private static final int CORRECT_COLOR = Color.rgb(102, 255, 102);
+    private static final int WRONG_COLOR   = Color.RED;
 
     public MidiPlayerTranscription(Activity activity) {
         super(activity);
@@ -34,7 +48,66 @@ public class MidiPlayerTranscription extends MidiPlayer {
         startPulseTime   = 0;
         currentPulseTime = 0;
         prevPulseTime    = -10;
+
+        currentNoteIndex = 0;
+        currentNoteSize  = 0;
+
+        trackingHandler = new Handler();
     }
+
+    public void putEvents(String notes) {
+        queue.add(notes);
+    }
+
+    public synchronized void startTracking() {
+        if(trackingThread != null) {
+            return;
+        }
+        queue.clear();
+        isTracking = true;
+        trackingThread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                tracking();
+            }
+        });
+        trackingThread.start();
+    }
+
+    public synchronized void stopTracking() {
+        if(trackingThread == null) {
+            return;
+        }
+        isTracking = false;
+        trackingThread = null;
+    }
+
+    private void tracking() {
+        while (isTracking) {
+            try {
+                Thread.sleep(MININUM_TIME_BETWEEN_FRAME_MS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if(queue.size() == 0) {
+                continue;
+            }
+            try {
+                String notes = queue.take();
+                trackingHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        OnMidiMultipleNotes(notes, true, currentFrame);
+                        currentFrame++;
+                    }
+                });
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        queue.clear();
+    }
+
 
     @Override
     public void SetMidiFile(MidiFile file, MidiOptions opt, SheetMusic s) {
@@ -42,6 +115,8 @@ public class MidiPlayerTranscription extends MidiPlayer {
         allNotes = new ArrayList<MidiNote>();
         prevWrongNotes = new ArrayList<Integer>();
         prevCorrectNotes = new ArrayList<Integer>();
+
+        currentPressedNotes = new ArrayList<Integer>();
 
         for(MidiTrack track: midifile.getTracks()) {
             for(MidiNote note: track.getNotes()) {
@@ -66,62 +141,118 @@ public class MidiPlayerTranscription extends MidiPlayer {
             }
         }
         Log.d(LOG_TAG, results);
-        currentNoteIndex = 0;
+        updateCurrentNoteIndex(0);
+    }
+
+    private void updateCurrentNoteIndex(int currentNoteIndex) {
+        this.currentNoteIndex = currentNoteIndex;
+        this.currentNoteSize  = 1;
+        int currentTime = allNotes.get(currentNoteIndex).getStartTime();
+        for(int i = currentNoteIndex + 1; i < allNotes.size(); i++) {
+            int noteTime = allNotes.get(i).getStartTime();
+            if(noteTime == currentTime) {
+                this.currentNoteSize++;
+            }
+        }
     }
 
     /**
-     * TODO: Kịch bản vẫn chưa clear.
      * Người dùng nhập 1 chuỗi các notes. Các note nhập sai sẽ sáng màu đỏ.
      * Kịch bản sẽ như sau:
-     * @param notes
+     * @param notes 1 string các note đã gõ dưới dạng midi index, ngăn cách với dấu space (Ví dụ "60 64 67").
      * @param pressed
      */
-    public void OnMidiMultipleNotes(int notes[], boolean pressed, int frame) {
+    public void OnMidiMultipleNotes(String notes, boolean pressed, int frame) {
         if(!pressed) return;
-        if(notes.length == 0) {
-            return;
-        }
-        List<MidiNote> currentNotes = getCurrentNotes();
-        if(currentNotes.size() == 0) {
-            Log.d(LOG_TAG, "Done a song!!!");
-            return;
-        }
+        currentPressedNotes.clear();
 
-        // Reset all prev wrong notes
-        for(int i = 0; i < prevWrongNotes.size(); i++) {
-            piano.UnShadeOneNote(prevWrongNotes.get(i));
+        // Parsing pressed notes
+        try {
+            for(String n: notes.split(" ")) {
+                currentPressedNotes.add(Integer.parseInt(n));
+            }
+        } catch (Exception e) {
+            // not do anything...
         }
-        prevWrongNotes.clear();
+        if(currentNoteIndex == allNotes.size()) {
+            Log.d(LOG_TAG, "Done this song!!!");
+            return;
+        }
+        if(currentPressedNotes.size() > 0) {
+            unShadePrevWrongNotes();
+        }
 
         boolean clearPrevCorrectNotes = true;
-        for(int i = 0; i < notes.length; i++) {
+        int numberOfCorrectNotes = 0;
+        for(int i = 0; i < currentPressedNotes.size(); i++) {
             boolean inCurrentNotes = false;
-            for(int j = 0; j < currentNotes.size(); j++) {
-                if(notes[i] == currentNotes.get(j).getNumber()) {
+            for(int j = this.currentNoteIndex; j < this.currentNoteSize + this.currentNoteIndex; j++) {
+                if(currentPressedNotes.get(i) == allNotes.get(j).getNumber()) {
                     inCurrentNotes = true;
                     break;
                 }
             }
             if(!inCurrentNotes) {
-                piano.ShadeOneNote(notes[i], Color.RED);
-                prevWrongNotes.add(notes[i]);
+                piano.ShadeOneNote(currentPressedNotes.get(i), WRONG_COLOR);
+                prevWrongNotes.add(currentPressedNotes.get(i));
             }
             if(inCurrentNotes) {
                 if(clearPrevCorrectNotes) {
                     unShadePrevCorrectNotes();
                     clearPrevCorrectNotes = false;
                 }
-                piano.ShadeOneNote(notes[i], correctColor);
-                prevCorrectNotes.add(notes[i]);
+                piano.ShadeOneNote(currentPressedNotes.get(i), CORRECT_COLOR);
+                prevCorrectNotes.add(currentPressedNotes.get(i));
+                numberOfCorrectNotes++;
             }
         }
 
+        boolean isCompleted = true;  // Đã gõ tất cả các note cùng onsets
+        if(numberOfCorrectNotes == this.currentNoteSize) {
+            isCompleted = true;
+        }
+        else {
+            isCompleted = false;
+        }
+
+        printCurrentPressedNote(frame);
+        if(isCompleted) {
+            sheet.ShadeNotes((int) currentPulseTime, (int) prevPulseTime, SheetMusic.ImmediateScroll);
+            prevPulseTime    = allNotes.get(currentNoteIndex).getStartTime();
+            updateCurrentNoteIndex(this.currentNoteIndex + this.currentNoteSize);
+            if(currentNoteIndex == allNotes.size()) {
+                return;
+            }
+            currentPulseTime = allNotes.get(currentNoteIndex).getStartTime();
+        }
+    }
+
+    private void unShadePrevCorrectNotes() {
+        for(int i = 0; i < prevCorrectNotes.size(); i++) {
+            piano.UnShadeOneNote(prevCorrectNotes.get(i));
+        }
+        prevCorrectNotes.clear();
+    }
+
+    private void unShadePrevWrongNotes() {
+        for(int i = 0; i < prevWrongNotes.size(); i++) {
+            piano.UnShadeOneNote(prevWrongNotes.get(i));
+        }
+        prevWrongNotes.clear();
+    }
+
+    private void printCurrentPressedNote(int frame) {
         String frameTime = Librosa.frameToTimestamp(frame,
                 TranscriptionRealtimeStack.SAMPLE_RATE,
                 TranscriptionRealtimeStack.HOP_SIZE);
-        String results = "On frame: "  + frameTime + ", Current time: " + frameTime;
-        results += "\nOnset notes:";
-        for(int n: notes) {
+        String results = "On frame: "  + frame + ", Current time: " + frameTime;
+        results += "\nCurrent notes:";
+        for(int j = currentNoteIndex; j < currentNoteSize + currentNoteIndex; j++) {
+            int n = allNotes.get(j).getNumber();
+            results += Librosa.midiToNoteName(n) + " ";
+        }
+        results += "\nPressed notes:";
+        for(int n: currentPressedNotes) {
             results += Librosa.midiToNoteName(n) + " ";
         }
         results +=  "\nWrong notes: ";
@@ -134,48 +265,5 @@ public class MidiPlayerTranscription extends MidiPlayer {
         }
         results += "\n";
         Log.d(LOG_TAG, results);
-
-        boolean isCompleted = true;  // Đã gõ tất cả các note cùng onsets
-        if(prevCorrectNotes.size() == currentNotes.size()) {
-            isCompleted = true;
-        }
-        else {
-            isCompleted = false;
-        }
-        if(isCompleted) {
-            sheet.ShadeNotes((int) currentPulseTime, (int) prevPulseTime, SheetMusic.ImmediateScroll);
-            currentNoteIndex = getNextNoteIndex();
-            prevPulseTime = currentNotes.get(0).getStartTime();
-            currentPulseTime = allNotes.get(currentNoteIndex).getStartTime();
-        }
-    }
-
-    private void unShadePrevCorrectNotes() {
-        for(int i = 0; i < prevCorrectNotes.size(); i++) {
-            piano.UnShadeOneNote(prevCorrectNotes.get(i));
-        }
-        prevCorrectNotes.clear();
-    }
-
-    public List<MidiNote> getCurrentNotes() {
-        int minStartTime = allNotes.get(currentNoteIndex).getStartTime();
-        List<MidiNote> currentNotes = new ArrayList<MidiNote>();
-        for(int i = currentNoteIndex; i < allNotes.size(); i++) {
-            if (allNotes.get(i).getStartTime() == minStartTime) {
-                currentNotes.add(allNotes.get(i));
-            }
-        }
-        return currentNotes;
-    }
-
-    public int getNextNoteIndex() {
-        int minStartTime = allNotes.get(currentNoteIndex).getStartTime();
-        int currentNotesSize = 0;
-        for(int i = currentNoteIndex; i < allNotes.size(); i++) {
-            if (allNotes.get(i).getStartTime() == minStartTime) {
-                currentNotesSize++;
-            }
-        }
-        return currentNoteIndex + currentNotesSize;
     }
 }

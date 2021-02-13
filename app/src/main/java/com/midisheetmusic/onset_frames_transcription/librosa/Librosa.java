@@ -46,6 +46,10 @@ public class Librosa {
         return -1;
     }
 
+    public static int notenameToMidi(String notenameStr) {
+        return notenameToNoteIndex(notenameStr) + 21;
+    }
+
     public static int timeToFrame(int time, int SAMPLE_RATE) {
         return 0;
     }

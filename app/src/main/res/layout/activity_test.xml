@@ -23,12 +23,12 @@
             android:onClick="onClickButtons"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
-        <Button
-            android:id="@+id/btnShade"
-            android:text="Shade"
-            android:layout_width="wrap_content"
-            android:onClick="onClickShade"
-            android:layout_height="wrap_content"/>
+<!--        <Button-->
+<!--            android:id="@+id/btnShade"-->
+<!--            android:text="Shade"-->
+<!--            android:layout_width="wrap_content"-->
+<!--            android:onClick="onClickShade"-->
+<!--            android:layout_height="wrap_content"/>-->
         <Button
             android:id="@+id/btnSim"
             android:text="Sim"

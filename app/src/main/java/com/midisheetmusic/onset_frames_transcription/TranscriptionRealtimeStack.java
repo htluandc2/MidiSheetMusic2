@@ -27,8 +27,8 @@ public class TranscriptionRealtimeStack implements Transciption {
 
     public static final int SAMPLE_RATE = 16_000;
     public static final int RECORDING_LENGTH      = (N_FRAMES + 3) * 512;
-    public static final float DETECTION_THRESHOLD = 0.5f;
-    public static final float SILENT_THRESHOLD    = 0.0f;
+    public static final float DETECTION_THRESHOLD = 0.9f;
+    public static final float SILENT_THRESHOLD    = 0.2f; // Threshold to remove silent frame
     public static final long MINIMUM_TIME_BETWEEN_SAMPLES_MS = 20;
 
     public static final int HOP_SIZE         = 512;
@@ -197,7 +197,7 @@ public class TranscriptionRealtimeStack implements Transciption {
         short[] inputBuffer      = new short[RECORDING_LENGTH];
         float[][] floatInputBuffer = new float[1][RECORDING_LENGTH];
         // Output of Models
-        final float[][][] pianoRolls = new float[1][N_FRAMES][88];
+        float[][][] pianoRolls = new float[1][N_FRAMES][88];
         int initFrame = 0;
 
         // Loop, grabbing recorded data and running the recognition model on it.
@@ -229,21 +229,21 @@ public class TranscriptionRealtimeStack implements Transciption {
             for(int i = 0; i < RECORDING_LENGTH; i++) {
                 floatInputBuffer[0][i] = inputBuffer[i] / 32767.0f;
             }
-            long startTime = new Date().getTime();
-            tfLiteModel.run(floatInputBuffer, pianoRolls);
-            lastProcessingTimeMs = new Date().getTime() - startTime;
-            Log.d(LOG_TAG, String.format("Time processing %d ms", lastProcessingTimeMs));
 
-            threshPianoRolls(pianoRolls[0]);
-            removeDuplicateRolls(pianoRolls[0]);
+            if(energy(floatInputBuffer[0]) < SILENT_THRESHOLD) {
+                // This is a silent frame.
+                removeAllPianoRolls(pianoRolls[0]);
+            }
+            else {
+                long startTime = new Date().getTime();
+                tfLiteModel.run(floatInputBuffer, pianoRolls);
+                lastProcessingTimeMs = new Date().getTime() - startTime;
+                Log.d(LOG_TAG, String.format("Time processing %d ms", lastProcessingTimeMs));
+
+                threshPianoRolls(pianoRolls[0]);
+                removeDuplicateRolls(pianoRolls[0]);
+            }
             copyPianoRollsToResult(pianoRolls[0]);
-
-            Utils.printTranscriptionNote(
-                    "Piano Rolls",
-                    resultRolls,
-                    DETECTION_THRESHOLD,
-                    initFrame,
-                    true);
 
             // Draw results on UI
             int finalInitFrame = initFrame;
@@ -253,7 +253,8 @@ public class TranscriptionRealtimeStack implements Transciption {
                     listener.onGetPianoRolls(resultRolls, finalInitFrame);
                 }
             });
-            System.arraycopy(inputBuffer, INPUT_WAV_LENGTH - OVERLAP_WAV_LENGTH, inputBuffer, 0, OVERLAP_WAV_LENGTH);
+            System.arraycopy(inputBuffer, INPUT_WAV_LENGTH - OVERLAP_WAV_LENGTH,
+                    inputBuffer, 0, OVERLAP_WAV_LENGTH);
             currentPoint = OVERLAP_WAV_LENGTH;
 
             initFrame += resultRolls.length;
@@ -269,7 +270,7 @@ public class TranscriptionRealtimeStack implements Transciption {
     }
 
     private void threshPianoRolls(float[][] pianoRolls) {
-        for(int i = 0; i < pianoRolls.length - 1; i++) {
+        for(int i = 0; i < pianoRolls.length; i++) {
             for(int j = 0; j < pianoRolls[0].length; j++) {
                 if(pianoRolls[i][j] > DETECTION_THRESHOLD) {
                     pianoRolls[i][j] = 1.0f;
@@ -277,6 +278,14 @@ public class TranscriptionRealtimeStack implements Transciption {
                 else {
                     pianoRolls[i][j] = 0.0f;
                 }
+            }
+        }
+    }
+
+    private void removeAllPianoRolls(float[][] pianoRolls) {
+        for(int i = 0; i < pianoRolls.length; i++) {
+            for(int j = 0; j < pianoRolls[0].length; j++) {
+                pianoRolls[i][j] = 0.0f;
             }
         }
     }
@@ -301,10 +310,11 @@ public class TranscriptionRealtimeStack implements Transciption {
         }
     }
 
-    public float energy(float[] inputBuffer, int start, int end) {
+    private float energy(float[] inputBuffer) {
         float x = 0.0f;
-        for(int i = start; i < end; i++) {
+        for(int i = 0; i < inputBuffer.length; i++) {
+            x += inputBuffer[i] * inputBuffer[i];
         }
-        return x;
+        return (float) Math.sqrt(x);
     }
 }

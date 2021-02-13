@@ -14,8 +14,7 @@ public class Utils {
             String LOG_TAG,
             float[][] pianoRolls,
             float threshold,
-            int initFrame,
-            boolean isSeparate) {
+            int initFrame) {
         int minNote = 15;   // C2
         int maxNote = 51;   // C5
 
@@ -31,7 +30,7 @@ public class Utils {
                 float note = frame[j];
                 String noteStr = "";
                 if(note > threshold) {
-                    noteStr = notename(j, false);
+                    noteStr = Librosa.notename(j);
                     if(noteStr.length() == 2) {
                         noteStr += " ";
                     }
@@ -55,20 +54,4 @@ public class Utils {
 
     }
 
-    public static String notename(int n, boolean space) {
-        if(space) {
-            String spaces[] = new String[12];
-            for(int i = 0; i < spaces.length; i++) {
-                spaces[i] = " ";
-            }
-            return spaces[n % 12];
-        }
-        String[] note = {"A", "A#", "B", "C",
-                "C#", "D", "D#", "E",
-                "F", "F#", "G", "G#"};
-        int octave = (n - 3) / 12 + 1;
-        if(n < 3)
-            octave = 0;
-        return note[n % 12] + octave;
-    }
 }
