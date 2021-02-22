@@ -715,7 +715,12 @@ public class Piano extends SurfaceView implements SurfaceHolder.Callback {
         surfaceReady = false;
     }
 
-    /** When the Piano is touched, pause the midi player */
+    /**
+     * When the Piano is touched, pause the midi player
+     * TODO: khi user touch vào piano, player cần trả về state, piano và sheet sẽ update tương ứng
+     * @param event
+     * @return
+     */
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (event.getActionMasked() == MotionEvent.ACTION_DOWN) {

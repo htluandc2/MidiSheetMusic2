@@ -27,7 +27,7 @@ public class TranscriptionRealtimeStack implements Transciption {
 
     public static final int SAMPLE_RATE = 16_000;
     public static final int RECORDING_LENGTH      = (N_FRAMES + 3) * 512;
-    public static final float DETECTION_THRESHOLD = 0.9f;
+    public static final float DETECTION_THRESHOLD = 0.95f;
     public static final float SILENT_THRESHOLD    = 0.2f; // Threshold to remove silent frame
     public static final long MINIMUM_TIME_BETWEEN_SAMPLES_MS = 20;
 
@@ -60,7 +60,7 @@ public class TranscriptionRealtimeStack implements Transciption {
     private TranscriptionRealtimeListener listener;
 
     /**
-     * TODO: Load model from runtime...
+     * Load model from runtime...
      * @param activity
      */
     public TranscriptionRealtimeStack(Activity activity) {
@@ -291,7 +291,6 @@ public class TranscriptionRealtimeStack implements Transciption {
     }
 
     private void removeDuplicateRolls(float[][] pianoRolls) {
-        // TODO: Remove duplicate in resultRolls
         for(int i = 0; i < pianoRolls.length; i++) {
             for(int j = 0; j < pianoRolls[0].length; j++) {
                 if(i - 2 < 0) {

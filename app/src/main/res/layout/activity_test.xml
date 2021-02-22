@@ -24,15 +24,15 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 <!--        <Button-->
-<!--            android:id="@+id/btnShade"-->
-<!--            android:text="Shade"-->
+<!--            android:id="@+id/btnSim"-->
+<!--            android:text="Sim"-->
+<!--            android:onClick="onClickSimulation"-->
 <!--            android:layout_width="wrap_content"-->
-<!--            android:onClick="onClickShade"-->
 <!--            android:layout_height="wrap_content"/>-->
         <Button
-            android:id="@+id/btnSim"
-            android:text="Sim"
-            android:onClick="onClickSimulation"
+            android:id="@+id/btnPlay"
+            android:text="Demo"
+            android:onClick="onClickPlayButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
     </LinearLayout>

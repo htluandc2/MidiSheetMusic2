@@ -1,7 +1,5 @@
 package com.midisheetmusic.activity;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.Manifest;
 import android.content.SharedPreferences;
 import android.net.Uri;
@@ -16,11 +14,10 @@ import android.widget.LinearLayout;
 import com.midisheetmusic.FileUri;
 import com.midisheetmusic.MidiFile;
 import com.midisheetmusic.MidiHandlingActivity;
-import com.midisheetmusic.MidiNote;
 import com.midisheetmusic.MidiOptions;
 import com.midisheetmusic.MidiPlayer;
+import com.midisheetmusic.MidiPlayerListener;
 import com.midisheetmusic.MidiPlayerTranscription;
-import com.midisheetmusic.MidiTrack;
 import com.midisheetmusic.Piano;
 import com.midisheetmusic.R;
 import com.midisheetmusic.SheetMusic;
@@ -31,13 +28,11 @@ import com.midisheetmusic.onset_frames_transcription.TranscriptionRealtimeStack;
 import com.midisheetmusic.onset_frames_transcription.Utils;
 import com.midisheetmusic.onset_frames_transcription.librosa.Librosa;
 import com.midisheetmusic.sheets.ClefSymbol;
-import com.mikepenz.materialdrawer.Drawer;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.zip.CRC32;
 
-public class TestActivity extends MidiHandlingActivity implements TranscriptionRealtimeListener {
+public class TestActivity extends MidiHandlingActivity
+        implements TranscriptionRealtimeListener, MidiPlayerListener {
 
     private static final int REQUEST_RECORD_AUDIO = 3;
     private static final String LOG_TAG = TestActivity.class.getSimpleName();
@@ -56,6 +51,13 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
     private Transciption transcription;
     private Button btnRecord;
     private Button btnStop;
+    private Button btnPlay;
+
+    int APP_STATE = 0;
+    final int INIT_STATE = 0; // Not run anything
+    final int PLAY_STATE = 1;
+    final int PAUSE_STATE = 2;
+    final int TRACKING_STATE = 3;
 
     /**
      * Create this SheetMusicActivity.
@@ -113,8 +115,13 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
         transcription.setOnsetsFramesTranscriptionRealtimeListener(this);
         btnRecord = findViewById(R.id.btnRecord);
         btnStop   = findViewById(R.id.btnStop);
+        btnPlay   = findViewById(R.id.btnPlay);
 
-//        printMidiFile();
+        printMidiFile();
+    }
+
+    private void printMidiFile() {
+
     }
 
     private void createViews() {
@@ -125,6 +132,8 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
         layout.addView(piano);
         player.SetPiano(piano);
         layout.requestLayout();
+
+        player.setMidiPlayerListener(this);
 
         createSheetMusic(options);
     }
@@ -212,6 +221,9 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
 
     public void onClickButtons(View view) {
         if(view.getId() == R.id.btnRecord) {
+            APP_STATE = TRACKING_STATE;
+            btnPlay.setEnabled(false);
+
             btnRecord.setEnabled(false);
             btnStop.setEnabled(true);
             requestMicrophonePermission();
@@ -221,12 +233,59 @@ public class TestActivity extends MidiHandlingActivity implements TranscriptionR
             player.startTracking();
         }
         if(view.getId() == R.id.btnStop) {
+            APP_STATE = INIT_STATE;
+
             transcription.stopRecognition();
             transcription.stopRecording();
             player.stopTracking();
 
             btnRecord.setEnabled(true);
             btnStop.setEnabled(false);
+            btnPlay.setEnabled(true);
+        }
+    }
+
+    public void onClickPlayButton(View view) {
+        if(APP_STATE != PLAY_STATE && APP_STATE != TRACKING_STATE) {
+            APP_STATE = PLAY_STATE;
+            btnPlay.setText("Pause");
+            player.PlayDemo();
+            btnRecord.setEnabled(false);
+            return;
+        }
+        if(APP_STATE == PLAY_STATE) {
+            APP_STATE = PAUSE_STATE;
+            btnPlay.setText("DEMO");
+            player.PauseDemo();
+            return;
+        }
+    }
+
+    @Override
+    public void OnMidiPlayerChangeState(int state) {
+        String tag = "MidiPlayerState";
+        if(state == MidiPlayer.stopped) {
+            Log.d(tag, "Current state: STOPPED");
+            btnRecord.setEnabled(true);
+            btnPlay.setText("DEMO");
+            player.RemoveShading();
+        }
+        if(state == MidiPlayer.playing) {
+            Log.d(tag, "Current state: PLAYING");
+        }
+        if(state == MidiPlayer.paused) {
+            Log.d(tag, "Current state: PAUSED");
+            btnPlay.setText("DEMO");
+            APP_STATE = PAUSE_STATE;
+        }
+        if(state == MidiPlayer.initStop) {
+            Log.d(tag, "Current state: INIT_STOP");
+        }
+        if(state == MidiPlayer.initPause) {
+            Log.d(tag, "Current state: INIT_PAUSE");
+        }
+        if(state == MidiPlayer.midi) {
+            Log.d(tag, "Current state: MIDI");
         }
     }
 }

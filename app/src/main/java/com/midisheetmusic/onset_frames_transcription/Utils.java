@@ -46,6 +46,14 @@ public class Utils {
         Log.d(LOG_TAG, results);
     }
 
+    /**
+     * TODO: Ghi lại piano transcription vào file để phục vụ debug về sau
+     * @param file
+     * @param pianoRolls
+     * @param threshold
+     * @param initFrame
+     * @param isSeparate
+     */
     public static void printTranscriptionNoteToFile(File file,
                                                     float[][] pianoRolls,
                                                     float threshold,

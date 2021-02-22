@@ -17,6 +17,7 @@ import java.util.*;
 import android.app.*;
 import android.content.*;
 import android.graphics.*;
+import android.util.Log;
 import android.view.*;
 
 import com.midisheetmusic.sheets.AccidSymbol;
@@ -1418,6 +1419,8 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 
     /** When the scroll is tapped, highlight the position tapped */
     public void scrollTapped(int x, int y) {
+        String results = String.format("x: %d, y: %d", x, y);
+        Log.d("SheetMusic", results);
         if (player != null) {
             player.MoveToClicked(scrollX + x, scrollY + y);
         }

@@ -188,4 +188,8 @@ public class MainActivity extends AppCompatActivity implements TranscriptionReal
             btnStop.setEnabled(false);
         }
     }
+
+    public void onClickPlayButton(View view) {
+
+    }
 }

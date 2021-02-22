@@ -3,7 +3,6 @@ package com.midisheetmusic;
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Handler;
-import android.os.SystemClock;
 import android.util.Log;
 
 import com.midisheetmusic.onset_frames_transcription.TranscriptionRealtimeStack;
@@ -44,10 +43,6 @@ public class MidiPlayerTranscription extends MidiPlayer {
 
     public MidiPlayerTranscription(Activity activity) {
         super(activity);
-        startTime = SystemClock.uptimeMillis();
-        startPulseTime   = 0;
-        currentPulseTime = 0;
-        prevPulseTime    = -10;
 
         currentNoteIndex = 0;
         currentNoteSize  = 0;
@@ -60,6 +55,7 @@ public class MidiPlayerTranscription extends MidiPlayer {
     }
 
     public synchronized void startTracking() {
+        RemoveShading();
         if(trackingThread != null) {
             return;
         }
@@ -265,5 +261,22 @@ public class MidiPlayerTranscription extends MidiPlayer {
         }
         results += "\n";
         Log.d(LOG_TAG, results);
+    }
+
+    public void PlayDemo() {
+        RemoveShading();
+        this.Play();
+    }
+
+    public void PauseDemo() {
+        this.Pause();
+    }
+
+
+    @Override
+    public void RemoveShading() {
+        super.RemoveShading();
+        unShadePrevWrongNotes();
+        unShadePrevCorrectNotes();
     }
 }
