@@ -14,7 +14,7 @@ public class PCMUtils {
 
     private static final String pcmTempFile = Environment.getExternalStorageDirectory()
             .getAbsolutePath() + "/temp_file.pcm";
-    private static final String wavTempFile = Environment.getExternalStorageDirectory()
+    public static final String wavTempFile = Environment.getExternalStorageDirectory()
             .getAbsolutePath() + "/temp_file.wav";
 
     private FileOutputStream os = null;

@@ -4,4 +4,6 @@ public interface TranscriptionRealtimeListener {
 
     public void onGetPianoRolls(float[][] pianoRolls, int initFrame);
 //    public void onGetLastInferenceTime(long lastProcessingTimeMs);
+    public void onStopRecording();
+    public void onStopRecognizing();
 }

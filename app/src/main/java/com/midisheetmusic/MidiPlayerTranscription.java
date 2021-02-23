@@ -279,4 +279,12 @@ public class MidiPlayerTranscription extends MidiPlayer {
         unShadePrevWrongNotes();
         unShadePrevCorrectNotes();
     }
+
+    @Override
+    public void MoveToClicked(int x, int y) {
+        if(isTracking) {
+            return;
+        }
+        super.MoveToClicked(x, y);
+    }
 }

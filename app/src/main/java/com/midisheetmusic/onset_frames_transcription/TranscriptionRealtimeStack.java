@@ -59,6 +59,9 @@ public class TranscriptionRealtimeStack implements Transciption {
     private Activity activity;
     private TranscriptionRealtimeListener listener;
 
+    // For return result piano rolls
+    private static float[][] resultRolls = new float[N_FRAMES-OVERLAP_TIMESTEPS-1][88];
+
     /**
      * Load model from runtime...
      * @param activity
@@ -163,6 +166,13 @@ public class TranscriptionRealtimeStack implements Transciption {
         record.release();
 
         queue.clear();
+
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                listener.onStopRecording();
+            }
+        });
     }
 
     public synchronized void startRecognition() {
@@ -188,8 +198,6 @@ public class TranscriptionRealtimeStack implements Transciption {
         recognitionThread = null;
     }
 
-
-    private static float[][] resultRolls = new float[N_FRAMES-OVERLAP_TIMESTEPS-1][88];
     private void recognize() {
         Log.v(LOG_TAG, "Start recognition...");
 
@@ -259,6 +267,13 @@ public class TranscriptionRealtimeStack implements Transciption {
 
             initFrame += resultRolls.length;
         }
+
+        activity.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                listener.onStopRecognizing();
+            }
+        });
     }
 
     private void copyPianoRollsToResult(float[][] pianoRolls) {

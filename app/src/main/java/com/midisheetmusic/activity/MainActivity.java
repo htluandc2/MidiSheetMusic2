@@ -98,6 +98,16 @@ public class MainActivity extends AppCompatActivity implements TranscriptionReal
         }
     }
 
+    @Override
+    public void onStopRecording() {
+
+    }
+
+    @Override
+    public void onStopRecognizing() {
+
+    }
+
     private void hideSystemUI() {
         // Enables sticky immersive mode.
         View decorView = getWindow().getDecorView();

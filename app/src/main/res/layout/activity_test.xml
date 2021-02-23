@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.midisheetmusic.activity.MainActivity"
+    tools:context="com.midisheetmusic.activity.TestActivity"
     android:orientation="vertical">
 
     <LinearLayout
@@ -14,13 +13,13 @@
             android:id="@+id/btnRecord"
             android:text="Record"
             android:layout_width="wrap_content"
-            android:onClick="onClickButtons"
+            android:onClick="onClickRecord"
             android:layout_height="wrap_content"/>
         <Button
             android:id="@+id/btnStop"
             android:text="Stop"
             android:enabled="false"
-            android:onClick="onClickButtons"
+            android:onClick="onClickRecord"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 <!--        <Button-->
@@ -32,9 +31,17 @@
         <Button
             android:id="@+id/btnPlay"
             android:text="Demo"
-            android:onClick="onClickPlayButton"
+            android:onClick="onClickPlay"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/btnPlayback"
+            android:text="BACK"
+            android:enabled="false"
+            android:onClick="onClickPlayBack"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            tools:ignore="OnClick" />
     </LinearLayout>
 
     <LinearLayout
