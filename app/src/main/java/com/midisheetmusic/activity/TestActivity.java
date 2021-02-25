@@ -1,6 +1,7 @@
 package com.midisheetmusic.activity;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -21,6 +22,7 @@ import com.midisheetmusic.MidiPlayerListener;
 import com.midisheetmusic.MidiPlayerTranscription;
 import com.midisheetmusic.Piano;
 import com.midisheetmusic.R;
+import com.midisheetmusic.SettingsActivity;
 import com.midisheetmusic.SheetMusic;
 import com.midisheetmusic.TimeSigSymbol;
 import com.midisheetmusic.onset_frames_transcription.Transciption;
@@ -40,6 +42,8 @@ import java.util.zip.CRC32;
 
 public class TestActivity extends MidiHandlingActivity
         implements TranscriptionRealtimeListener, MidiPlayerListener {
+
+    public static final int settingsRequestCode = 1;
 
     private static final int REQUEST_RECORD_AUDIO = 3;
     private static final String LOG_TAG = TestActivity.class.getSimpleName();
@@ -77,6 +81,7 @@ public class TestActivity extends MidiHandlingActivity
      * The Intent should have 2 parameters:
      * - data: The uri of the midi file to open.
      * - MidiTitleID: The title of the song (String)
+     *
      * @param savedInstanceState
      */
     @Override
@@ -93,12 +98,12 @@ public class TestActivity extends MidiHandlingActivity
 
         // Parse the MidiFile from the raw bytes
         Uri uri = this.getIntent().getData();
-        if(uri == null) {
+        if (uri == null) {
             this.finish();
             return;
         }
         String title = this.getIntent().getStringExtra(MidiTitleID);
-        if(title == null) {
+        if (title == null) {
             title = uri.getLastPathSegment();
         }
         Log.d(LOG_TAG, "Music song:" + title);
@@ -115,10 +120,10 @@ public class TestActivity extends MidiHandlingActivity
         midiCRC = crc.getValue();
         SharedPreferences settings = getPreferences(0);
         options.scrollVert = settings.getBoolean("scrollVert", false);
-        options.shade1Color= settings.getInt("shade1Color", options.shade1Color);
-        options.shade2Color= settings.getInt("shade2Color", options.shade2Color);
-        options.showPiano  = settings.getBoolean("showPiano", true);
-        String json = settings.getString(""+midiCRC, null);
+        options.shade1Color = settings.getInt("shade1Color", options.shade1Color);
+        options.shade2Color = settings.getInt("shade2Color", options.shade2Color);
+        options.showPiano = settings.getBoolean("showPiano", true);
+        String json = settings.getString("" + midiCRC, null);
         MidiOptions savedOptions = MidiOptions.fromJson(json);
 
         createViews();
@@ -127,11 +132,11 @@ public class TestActivity extends MidiHandlingActivity
         transcription = new TranscriptionRealtimeStack(this);
         transcription.setOnsetsFramesTranscriptionRealtimeListener(this);
         btnRecord = findViewById(R.id.btnRecord);
-        btnStop   = findViewById(R.id.btnStop);
+        btnStop = findViewById(R.id.btnStop);
         isStopReconizing = false;
         isStopRecording = false;
 
-        btnPlay   = findViewById(R.id.btnPlay);
+        btnPlay = findViewById(R.id.btnPlay);
 
         // For playback sound
         btnPlayback = findViewById(R.id.btnPlayback);
@@ -142,7 +147,7 @@ public class TestActivity extends MidiHandlingActivity
         layout = findViewById(R.id.content_layout_test);
         player = new MidiPlayerTranscription(this);
 
-        piano  = new Piano(this);
+        piano = new Piano(this);
         layout.addView(piano);
         player.SetPiano(piano);
         layout.requestLayout();
@@ -153,7 +158,7 @@ public class TestActivity extends MidiHandlingActivity
     }
 
     private void createSheetMusic(MidiOptions options) {
-        if(sheet != null) {
+        if (sheet != null) {
             layout.removeView(sheet);
         }
         piano.setVisibility(options.showPiano ? View.VISIBLE : View.GONE);
@@ -172,11 +177,11 @@ public class TestActivity extends MidiHandlingActivity
         View decorView = getWindow().getDecorView();
         decorView.setSystemUiVisibility(
                 View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                | View.SYSTEM_UI_FLAG_FULLSCREEN);
+                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
     }
 
     @Override
@@ -212,19 +217,19 @@ public class TestActivity extends MidiHandlingActivity
     }
 
     protected void requestMicrophonePermission() {
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             requestPermissions(
-                    new String[] {Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO);
+                    new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_RECORD_AUDIO);
         }
     }
 
     @Override
     public void onGetPianoRolls(float[][] pianoRolls, int initFrame) {
         Utils.printTranscriptionNote(LOG_TAG, pianoRolls, 0.5f, initFrame);
-        for(int i = 0; i < pianoRolls.length; i++) {
+        for (int i = 0; i < pianoRolls.length; i++) {
             String notes = "";
-            for(int j = 0; j < pianoRolls[i].length; j++) {
-                if(pianoRolls[i][j] == 1.0f) {
+            for (int j = 0; j < pianoRolls[i].length; j++) {
+                if (pianoRolls[i][j] == 1.0f) {
                     notes += (j + 21) + " ";
                 }
             }
@@ -237,7 +242,7 @@ public class TestActivity extends MidiHandlingActivity
     @Override
     public void onStopRecording() {
         isStopRecording = true;
-        if(isStopRecording && isStopReconizing) {
+        if (isStopRecording && isStopReconizing) {
             btnPlayback.setEnabled(true);
         }
     }
@@ -245,13 +250,13 @@ public class TestActivity extends MidiHandlingActivity
     @Override
     public void onStopRecognizing() {
         isStopReconizing = true;
-        if(isStopReconizing && isStopRecording) {
+        if (isStopReconizing && isStopRecording) {
             btnPlayback.setEnabled(true);
         }
     }
 
     public void onClickRecord(View view) {
-        if(view.getId() == R.id.btnRecord) {
+        if (view.getId() == R.id.btnRecord) {
             pianoRollsForPlayback.clear();
 
             APP_STATE = TRACKING_STATE;
@@ -265,7 +270,7 @@ public class TestActivity extends MidiHandlingActivity
             transcription.startRecognition();
             player.startTracking();
         }
-        if(view.getId() == R.id.btnStop) {
+        if (view.getId() == R.id.btnStop) {
             APP_STATE = INIT_STATE;
 
             transcription.stopRecognition();
@@ -284,7 +289,7 @@ public class TestActivity extends MidiHandlingActivity
 
     private void PlaySound() {
         player.RemoveShading();
-        if(playBackPlayer == null) {
+        if (playBackPlayer == null) {
             return;
         }
         try {
@@ -295,7 +300,7 @@ public class TestActivity extends MidiHandlingActivity
             playBackPlayer.prepare();
             playBackPlayer.start();
             player.startTracking();
-            for(int i = 0; i < pianoRollsForPlayback.size(); i++) {
+            for (int i = 0; i < pianoRollsForPlayback.size(); i++) {
                 String notes = pianoRollsForPlayback.get(i);
                 player.putEvents(notes);
             }
@@ -311,14 +316,14 @@ public class TestActivity extends MidiHandlingActivity
 
 
     public void onClickPlay(View view) {
-        if(APP_STATE != PLAY_STATE && APP_STATE != TRACKING_STATE) {
+        if (APP_STATE != PLAY_STATE && APP_STATE != TRACKING_STATE) {
             APP_STATE = PLAY_STATE;
             btnPlay.setText("Pause");
             player.PlayDemo();
             btnRecord.setEnabled(false);
             return;
         }
-        if(APP_STATE == PLAY_STATE) {
+        if (APP_STATE == PLAY_STATE) {
             APP_STATE = PAUSE_STATE;
             btnPlay.setText("DEMO");
             player.PauseDemo();
@@ -329,27 +334,78 @@ public class TestActivity extends MidiHandlingActivity
     @Override
     public void OnMidiPlayerChangeState(int state) {
         String tag = "MidiPlayerState";
-        if(state == MidiPlayer.stopped) {
+        if (state == MidiPlayer.stopped) {
             Log.d(tag, "Current state: STOPPED");
             btnRecord.setEnabled(true);
             btnPlay.setText("DEMO");
         }
-        if(state == MidiPlayer.playing) {
+        if (state == MidiPlayer.playing) {
             Log.d(tag, "Current state: PLAYING");
         }
-        if(state == MidiPlayer.paused) {
+        if (state == MidiPlayer.paused) {
             Log.d(tag, "Current state: PAUSED");
             btnPlay.setText("DEMO");
             APP_STATE = PAUSE_STATE;
         }
-        if(state == MidiPlayer.initStop) {
+        if (state == MidiPlayer.initStop) {
             Log.d(tag, "Current state: INIT_STOP");
         }
-        if(state == MidiPlayer.initPause) {
+        if (state == MidiPlayer.initPause) {
             Log.d(tag, "Current state: INIT_PAUSE");
         }
-        if(state == MidiPlayer.midi) {
+        if (state == MidiPlayer.midi) {
             Log.d(tag, "Current state: MIDI");
         }
+    }
+
+
+    public void onClickSettings(View view) {
+        changeSettings();
+    }
+
+    private void changeSettings() {
+        MidiOptions defaultOptions = new MidiOptions(midiFile);
+        Intent intent = new Intent(this, SettingsActivity.class);
+        intent.putExtra(SettingsActivity.settingsID, options);
+        intent.putExtra(SettingsActivity.defaultSettingsID, defaultOptions);
+        startActivityForResult(intent, settingsRequestCode);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
+        if (requestCode != settingsRequestCode) {
+            return;
+        }
+        options = (MidiOptions)
+                intent.getSerializableExtra(SettingsActivity.settingsID);
+
+        // Check whether the default instruments have changed.
+        for (int i = 0; i < options.instruments.length; i++) {
+            if (options.instruments[i] !=
+                    midiFile.getTracks().get(i).getInstrument()) {
+                options.useDefaultInstruments = false;
+            }
+        }
+
+        saveOptions();
+
+        // Recreate the sheet music with the new options
+        createSheetMusic(options);
+    }
+
+    private void saveOptions() {
+        SharedPreferences.Editor editor = getPreferences(0).edit();
+        editor.putBoolean("scrollVert", options.scrollVert);
+        editor.putInt("shade1Color", options.shade1Color);
+        editor.putInt("shade2Color", options.shade2Color);
+        editor.putBoolean("showPiano", options.showPiano);
+        for (int i = 0; i < options.noteColors.length; i++) {
+            editor.putInt("noteColor" + i, options.noteColors[i]);
+        }
+        String json = options.toJson();
+        if (json != null) {
+            editor.putString("" + midiCRC, json);
+        }
+        editor.apply();
     }
 }

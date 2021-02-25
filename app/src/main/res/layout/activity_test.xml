@@ -40,8 +40,13 @@
             android:enabled="false"
             android:onClick="onClickPlayBack"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            tools:ignore="OnClick" />
+            android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/btnSettings"
+            android:text="Settings"
+            android:onClick="onClickSettings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
     </LinearLayout>
 
     <LinearLayout
