@@ -50,12 +50,15 @@ public class MidiPlayerTranscription extends MidiPlayer {
         trackingHandler = new Handler();
     }
 
+
+
     public void putEvents(String notes) {
         queue.add(notes);
     }
 
     public synchronized void startTracking() {
-        RemoveShading();
+        ScrollToStart();
+        updateCurrentNoteIndex(0);
         if(trackingThread != null) {
             return;
         }
@@ -65,8 +68,7 @@ public class MidiPlayerTranscription extends MidiPlayer {
             @Override
             public void run() {
                 tracking();
-            }
-        });
+            }});
         trackingThread.start();
     }
 
@@ -82,13 +84,9 @@ public class MidiPlayerTranscription extends MidiPlayer {
         while (isTracking) {
             try {
                 Thread.sleep(MININUM_TIME_BETWEEN_FRAME_MS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            if(queue.size() == 0) {
-                continue;
-            }
-            try {
+                if(queue.size() == 0) {
+                    continue;
+                }
                 String notes = queue.take();
                 trackingHandler.post(new Runnable() {
                     @Override
@@ -153,8 +151,8 @@ public class MidiPlayerTranscription extends MidiPlayer {
     }
 
     /**
+     * TODO: OnMidiMultipleNotes
      * Người dùng nhập 1 chuỗi các notes. Các note nhập sai sẽ sáng màu đỏ.
-     * Kịch bản sẽ như sau:
      * @param notes 1 string các note đã gõ dưới dạng midi index, ngăn cách với dấu space (Ví dụ "60 64 67").
      * @param pressed
      */
@@ -224,6 +222,9 @@ public class MidiPlayerTranscription extends MidiPlayer {
     }
 
     private void unShadePrevCorrectNotes() {
+        if(prevCorrectNotes == null) {
+            return;
+        }
         for(int i = 0; i < prevCorrectNotes.size(); i++) {
             piano.UnShadeOneNote(prevCorrectNotes.get(i));
         }
@@ -231,6 +232,9 @@ public class MidiPlayerTranscription extends MidiPlayer {
     }
 
     private void unShadePrevWrongNotes() {
+        if(prevWrongNotes == null) {
+            return;
+        }
         for(int i = 0; i < prevWrongNotes.size(); i++) {
             piano.UnShadeOneNote(prevWrongNotes.get(i));
         }
@@ -272,19 +276,30 @@ public class MidiPlayerTranscription extends MidiPlayer {
         this.Pause();
     }
 
-
-    @Override
-    public void RemoveShading() {
-        super.RemoveShading();
-        unShadePrevWrongNotes();
-        unShadePrevCorrectNotes();
-    }
-
     @Override
     public void MoveToClicked(int x, int y) {
         if(isTracking) {
             return;
         }
         super.MoveToClicked(x, y);
+    }
+
+    @Override
+    void ScrollToStart() {
+        super.ScrollToStart();
+        trackingHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                RemoveShading();
+            }
+        }, 200);
+
+    }
+
+    @Override
+    public void RemoveShading() {
+        super.RemoveShading();
+        unShadePrevCorrectNotes();
+        unShadePrevWrongNotes();
     }
 }
