@@ -3,6 +3,7 @@ package com.midisheetmusic.activity;
 import android.Manifest;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
@@ -43,13 +44,13 @@ import java.util.zip.CRC32;
 public class TestActivity extends MidiHandlingActivity
         implements TranscriptionRealtimeListener, MidiPlayerListener {
 
+    public static final String MidiTitleID = "MidiTitleID";
     public static final int settingsRequestCode = 1;
 
     private static final int REQUEST_RECORD_AUDIO = 3;
     private static final String LOG_TAG = TestActivity.class.getSimpleName();
 
-    public static final String MidiTitleID = "MidiTitleID";
-
+    // Use a custom class for tracking notes
     private MidiPlayerTranscription player;      // The play/stop/rewind toolbar
     private Piano piano;            // The piano at the top
     private SheetMusic sheet;       // The sheet music
@@ -111,21 +112,11 @@ public class TestActivity extends MidiHandlingActivity
         byte[] data;
         data = file.getData(this);
         midiFile = new MidiFile(data, title);
-
-        // MidiOptions: init the settings.
-        // If previous settings have been saved, use those
-        options = new MidiOptions(midiFile);
         CRC32 crc = new CRC32();
         crc.update(data);
         midiCRC = crc.getValue();
-        SharedPreferences settings = getPreferences(0);
-        options.scrollVert = settings.getBoolean("scrollVert", false);
-        options.shade1Color = settings.getInt("shade1Color", options.shade1Color);
-        options.shade2Color = settings.getInt("shade2Color", options.shade2Color);
-        options.showPiano = settings.getBoolean("showPiano", true);
-        String json = settings.getString("" + midiCRC, null);
-        MidiOptions savedOptions = MidiOptions.fromJson(json);
 
+        makeDefaultOptions();
         createViews();
 
         // For transcription sound
@@ -141,6 +132,38 @@ public class TestActivity extends MidiHandlingActivity
         // For playback sound
         btnPlayback = findViewById(R.id.btnPlayback);
         playBackPlayer = new MediaPlayer();
+    }
+
+    /**
+     * Make default options from saved options and default options
+     * TODO: Hiện tại còn thiếu các settings:
+     * - Save as Images.
+     * - Select Tracks to Play.
+     * - Select Instruments for each Track.
+     */
+    private void makeDefaultOptions() {
+        // MidiOptions: init the settings.
+        // If previous settings have been saved, use thos
+        options = new MidiOptions(midiFile);
+        SharedPreferences settings = getPreferences(0);
+        options.scrollVert = settings.getBoolean("scrollVert", false);
+        options.playMeasuresInLoop = settings.getBoolean("playMeasuresInLoop", false);
+        options.showLyrics = settings.getBoolean("showLyrics", true);
+        options.showNoteLetters = settings.getInt("showNoteLetters", MidiOptions.NoteNameLetter);
+        options.transpose = settings.getInt("transpose", -1); // Down 1 note
+        options.midiShift = settings.getInt("midiShift", -1); // Down 1 note
+        int orange = Color.rgb(255, 165, 0);
+        int blue   = Color.BLUE;
+        options.shade1Color = settings.getInt("shade1Color", orange);
+        options.shade2Color = settings.getInt("shade2Color", blue);
+        options.showPiano = settings.getBoolean("showPiano", true);
+        options.useColors  = settings.getBoolean("useColors", true);
+
+        String json = settings.getString("" + midiCRC, null);
+        MidiOptions savedOptions = MidiOptions.fromJson(json);
+        if(savedOptions != null) {
+            options.merge(savedOptions);
+        }
     }
 
     private void createViews() {

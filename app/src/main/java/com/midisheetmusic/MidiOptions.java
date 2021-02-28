@@ -261,7 +261,7 @@ public class MidiOptions implements Serializable {
 
 
     /* Merge in the saved options to this MidiOptions.*/
-    void merge(MidiOptions saved) {
+    public void merge(MidiOptions saved) {
         if (saved.tracks.length == tracks.length) {
             System.arraycopy(saved.tracks, 0, tracks, 0, tracks.length);
         }
