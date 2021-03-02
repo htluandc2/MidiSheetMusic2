@@ -80,6 +80,17 @@ public class MidiPlayerTranscription extends MidiPlayer {
         trackingThread = null;
     }
 
+    public synchronized void waitForTrackingStopped() {
+        if(trackingThread == null) {
+            return;
+        }
+        try {
+            trackingThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void tracking() {
         while (isTracking) {
             try {

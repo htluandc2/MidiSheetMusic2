@@ -7,7 +7,9 @@ public interface Transciption {
 
     public void startRecording();
     public void stopRecording();
+    public void waitForRecordingStopped();
 
     public void startRecognition();
     public void stopRecognition();
+    public void waitForRecognitionStopped();
 }

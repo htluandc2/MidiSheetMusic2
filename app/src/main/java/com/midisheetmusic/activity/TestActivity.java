@@ -215,6 +215,7 @@ public class TestActivity extends MidiHandlingActivity
     public void OnMidiNote(int note, boolean pressed) {
     }
 
+    // For testing "track" function in MidiPlayerTranscription
     public void onClickSimulation(View view) {
         player.startTracking();
 
@@ -264,30 +265,22 @@ public class TestActivity extends MidiHandlingActivity
 
     @Override
     public void onStopRecording() {
-        isStopRecording = true;
-        if (isStopRecording && isStopReconizing) {
-            btnPlayback.setEnabled(true);
-        }
     }
 
     @Override
     public void onStopRecognizing() {
-        isStopReconizing = true;
-        if (isStopReconizing && isStopRecording) {
-            btnPlayback.setEnabled(true);
-        }
     }
 
     public void onClickRecord(View view) {
         if (view.getId() == R.id.btnRecord) {
+            requestMicrophonePermission();
             pianoRollsForPlayback.clear();
 
             APP_STATE = TRACKING_STATE;
             btnPlay.setEnabled(false);
-
             btnRecord.setEnabled(false);
             btnStop.setEnabled(true);
-            requestMicrophonePermission();
+            btnPlayback.setEnabled(false);
 
             transcription.startRecording();
             transcription.startRecognition();
@@ -300,13 +293,21 @@ public class TestActivity extends MidiHandlingActivity
             transcription.stopRecording();
             player.stopTracking();
 
+            transcription.waitForRecognitionStopped();
+            transcription.waitForRecordingStopped();
+            player.waitForTrackingStopped();
+
             btnRecord.setEnabled(true);
             btnStop.setEnabled(false);
             btnPlay.setEnabled(true);
+            btnPlayback.setEnabled(true);
         }
     }
 
     public void onClickPlayBack(View view) {
+        btnRecord.setEnabled(false);
+        btnPlay.setEnabled(false);
+        btnPlayback.setEnabled(false);
         PlaySound();
     }
 
@@ -320,6 +321,14 @@ public class TestActivity extends MidiHandlingActivity
             playBackPlayer.reset();
             playBackPlayer.setDataSource(input.getFD());
             input.close();
+            playBackPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                    btnRecord.setEnabled(true);
+                    btnPlay.setEnabled(true);
+                    btnPlayback.setEnabled(true);
+                }
+            });
             playBackPlayer.prepare();
             playBackPlayer.start();
             player.startTracking();
@@ -333,22 +342,20 @@ public class TestActivity extends MidiHandlingActivity
 
     }
 
-    private void StopSound() {
-
-    }
-
-
     public void onClickPlay(View view) {
+        // On pause state
         if (APP_STATE != PLAY_STATE && APP_STATE != TRACKING_STATE) {
             APP_STATE = PLAY_STATE;
             btnPlay.setText("Pause");
             player.PlayDemo();
             btnRecord.setEnabled(false);
+            btnStop.setEnabled(false);
+            btnPlayback.setEnabled(false);
             return;
         }
         if (APP_STATE == PLAY_STATE) {
             APP_STATE = PAUSE_STATE;
-            btnPlay.setText("DEMO");
+            btnPlay.setText("Demo");
             player.PauseDemo();
             return;
         }

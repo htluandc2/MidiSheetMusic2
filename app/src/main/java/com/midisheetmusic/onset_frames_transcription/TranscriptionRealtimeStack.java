@@ -120,6 +120,17 @@ public class TranscriptionRealtimeStack implements Transciption {
         recordingThread = null;
     }
 
+    public synchronized void waitForRecordingStopped() {
+        if(recordingThread == null) {
+            return;
+        }
+        try {
+            recordingThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     private void record() {
         android.os.Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO);
 
@@ -166,13 +177,6 @@ public class TranscriptionRealtimeStack implements Transciption {
         record.release();
 
         queue.clear();
-
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                listener.onStopRecording();
-            }
-        });
     }
 
     public synchronized void startRecognition() {
@@ -196,6 +200,17 @@ public class TranscriptionRealtimeStack implements Transciption {
         }
         shouldContinueRecognition = false;
         recognitionThread = null;
+    }
+
+    public synchronized void waitForRecognitionStopped() {
+        if(recognitionThread == null) {
+            return;
+        }
+        try {
+            recognitionThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private void recognize() {
@@ -267,13 +282,6 @@ public class TranscriptionRealtimeStack implements Transciption {
 
             initFrame += resultRolls.length;
         }
-
-        activity.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                listener.onStopRecognizing();
-            }
-        });
     }
 
     private void copyPianoRollsToResult(float[][] pianoRolls) {
