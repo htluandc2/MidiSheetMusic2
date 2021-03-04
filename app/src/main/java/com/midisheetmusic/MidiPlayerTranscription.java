@@ -17,7 +17,7 @@ import java.util.concurrent.BlockingQueue;
 public class MidiPlayerTranscription extends MidiPlayer {
 
     private static final String LOG_TAG = MidiPlayerTranscription.class.getSimpleName();
-    private static final long MININUM_TIME_BETWEEN_FRAME_MS = 32;
+    private static final long MININUM_TIME_BETWEEN_FRAME_MS = 30;
 
     // Queue to tracking piano events
     private static final int QUEUE_SIZE = 1024 * 8;
@@ -114,6 +114,7 @@ public class MidiPlayerTranscription extends MidiPlayer {
     }
 
 
+    // Remember: This function need + opt.transpose
     @Override
     public void SetMidiFile(MidiFile file, MidiOptions opt, SheetMusic s) {
         super.SetMidiFile(file, opt, s);
@@ -133,7 +134,8 @@ public class MidiPlayerTranscription extends MidiPlayer {
         int currentStartTime = allNotes.get(0).getStartTime();
         for(int i = 0; i < allNotes.size(); i++) {
             MidiNote currentNote = allNotes.get(i);
-            String notename = Librosa.midiToNoteName(currentNote.getNumber());
+            int notenumber = currentNote.getNumber() + options.transpose;
+            String notename = Librosa.midiToNoteName(notenumber);
             if(currentNote.getStartTime() > currentStartTime) {
                 results += "\n";
                 results += String.format("%s(start=%d, dur=%d)\t\t", notename,
@@ -161,6 +163,7 @@ public class MidiPlayerTranscription extends MidiPlayer {
         }
     }
 
+    // Remember: This function need + opt.transpose
     /**
      * TODO: OnMidiMultipleNotes
      * Người dùng nhập 1 chuỗi các notes. Các note nhập sai sẽ sáng màu đỏ.
@@ -192,7 +195,8 @@ public class MidiPlayerTranscription extends MidiPlayer {
         for(int i = 0; i < currentPressedNotes.size(); i++) {
             boolean inCurrentNotes = false;
             for(int j = this.currentNoteIndex; j < this.currentNoteSize + this.currentNoteIndex; j++) {
-                if(currentPressedNotes.get(i) == allNotes.get(j).getNumber()) {
+                int notenumber = allNotes.get(j).getNumber() + options.transpose;
+                if(currentPressedNotes.get(i) == notenumber) {
                     inCurrentNotes = true;
                     break;
                 }
@@ -252,6 +256,7 @@ public class MidiPlayerTranscription extends MidiPlayer {
         prevWrongNotes.clear();
     }
 
+    // Remember: This function need + opt.transpose
     private void printCurrentPressedNote(int frame) {
         String frameTime = Librosa.frameToTimestamp(frame,
                 TranscriptionRealtimeStack.SAMPLE_RATE,
@@ -259,7 +264,7 @@ public class MidiPlayerTranscription extends MidiPlayer {
         String results = "On frame: "  + frame + ", Current time: " + frameTime;
         results += "\nCurrent notes:";
         for(int j = currentNoteIndex; j < currentNoteSize + currentNoteIndex; j++) {
-            int n = allNotes.get(j).getNumber();
+            int n = allNotes.get(j).getNumber() + options.transpose;
             results += Librosa.midiToNoteName(n) + " ";
         }
         results += "\nPressed notes:";

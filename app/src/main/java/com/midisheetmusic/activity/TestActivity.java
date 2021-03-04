@@ -37,6 +37,7 @@ import com.midisheetmusic.sheets.ClefSymbol;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.zip.CRC32;
@@ -75,7 +76,7 @@ public class TestActivity extends MidiHandlingActivity
     // For playback recording file
     private Button btnPlayback;
     private MediaPlayer playBackPlayer;
-    private static List<String> pianoRollsForPlayback = new LinkedList<String>();
+    private static List<String> pianoRollsForPlayback = new ArrayList<>(100_000);
 
     /**
      * Create this SheetMusicActivity.
@@ -437,5 +438,18 @@ public class TestActivity extends MidiHandlingActivity
             editor.putString("" + midiCRC, json);
         }
         editor.apply();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        player.stopTracking();
+        transcription.stopRecognition();
+        transcription.stopRecording();
+
+        player.waitForTrackingStopped();
+        transcription.waitForRecognitionStopped();
+        transcription.waitForRecordingStopped();
     }
 }
