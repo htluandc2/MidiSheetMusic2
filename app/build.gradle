@@ -16,6 +16,7 @@ android {
         applicationId "com.ditek.midisheetmusic"
         minSdkVersion 21
         targetSdkVersion 28
+        vectorDrawables.useSupportLibrary = true
     }
 
     buildTypes {
