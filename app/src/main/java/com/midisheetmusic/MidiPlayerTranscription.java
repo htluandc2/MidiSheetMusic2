@@ -155,12 +155,18 @@ public class MidiPlayerTranscription extends MidiPlayer {
         this.currentNoteIndex = currentNoteIndex;
         this.currentNoteSize  = 1;
         int currentTime = allNotes.get(currentNoteIndex).getStartTime();
+        // Cho trường hợp không có note nhạc ở time 0
+        if(currentNoteIndex == 0 && currentTime > 0) {
+            prevPulseTime = 0;
+            currentPulseTime = currentTime;
+        }
         for(int i = currentNoteIndex + 1; i < allNotes.size(); i++) {
             int noteTime = allNotes.get(i).getStartTime();
             if(noteTime == currentTime) {
                 this.currentNoteSize++;
             }
         }
+
     }
 
     // Remember: This function need + opt.transpose
@@ -229,10 +235,10 @@ public class MidiPlayerTranscription extends MidiPlayer {
             sheet.ShadeNotes((int) currentPulseTime, (int) prevPulseTime, SheetMusic.ImmediateScroll);
             prevPulseTime    = allNotes.get(currentNoteIndex).getStartTime();
             updateCurrentNoteIndex(this.currentNoteIndex + this.currentNoteSize);
+            currentPulseTime = allNotes.get(currentNoteIndex).getStartTime();
             if(currentNoteIndex == allNotes.size()) {
                 return;
             }
-            currentPulseTime = allNotes.get(currentNoteIndex).getStartTime();
         }
     }
 

@@ -537,11 +537,11 @@ public class MidiPlayer extends LinearLayout {
      *  The actual pause is done when the timer is invoked.
      */
     public void Pause() {
-//        this.setVisibility(View.VISIBLE);
+        this.setVisibility(View.VISIBLE);
 //        LinearLayout layout = (LinearLayout)this.getParent();
 //        layout.requestLayout();
-//        this.requestLayout();
-//        this.invalidate();
+        this.requestLayout();
+        this.invalidate();
 
         if (midifile == null || sheet == null || numberTracks() == 0) {
             return;
