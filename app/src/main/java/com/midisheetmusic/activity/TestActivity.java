@@ -17,6 +17,7 @@ import android.widget.LinearLayout;
 import com.midisheetmusic.FileUri;
 import com.midisheetmusic.MidiFile;
 import com.midisheetmusic.MidiHandlingActivity;
+import com.midisheetmusic.MidiNote;
 import com.midisheetmusic.MidiOptions;
 import com.midisheetmusic.MidiPlayer;
 import com.midisheetmusic.MidiPlayerListener;
@@ -46,7 +47,10 @@ public class TestActivity extends MidiHandlingActivity
         implements TranscriptionRealtimeListener, MidiPlayerListener {
 
     public static final String MidiTitleID = "MidiTitleID";
+    public static final String ChangeNoteName = "ChangeNoteName";
+    public static final String ChangeNoteTime = "ChangeNoteTime";
     public static final int settingsRequestCode = 1;
+    public static final int changeNoteRequestCode = 2;
 
     private static final int REQUEST_RECORD_AUDIO = 3;
     private static final String LOG_TAG = TestActivity.class.getSimpleName();
@@ -65,7 +69,8 @@ public class TestActivity extends MidiHandlingActivity
     private Button btnRecord;
     private Button btnStop;
     private Button btnPlay;
-    private boolean isStopRecording, isStopReconizing;
+    private Button btnChange;
+    private boolean isStopRecording, isStopReconizing, isChangingNote;
 
     int APP_STATE = 0;
     final int INIT_STATE = 0; // Not run anything
@@ -125,8 +130,10 @@ public class TestActivity extends MidiHandlingActivity
         transcription.setOnsetsFramesTranscriptionRealtimeListener(this);
         btnRecord = findViewById(R.id.btnRecord);
         btnStop = findViewById(R.id.btnStop);
+        btnChange = findViewById(R.id.btnChange);
         isStopReconizing = false;
         isStopRecording = false;
+        isChangingNote = false;
 
         btnPlay = findViewById(R.id.btnPlay);
 
@@ -404,24 +411,26 @@ public class TestActivity extends MidiHandlingActivity
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        if (requestCode != settingsRequestCode) {
-            return;
-        }
-        options = (MidiOptions)
-                intent.getSerializableExtra(SettingsActivity.settingsID);
+        if (requestCode == settingsRequestCode) {
+            options = (MidiOptions)
+                    intent.getSerializableExtra(SettingsActivity.settingsID);
 
-        // Check whether the default instruments have changed.
-        for (int i = 0; i < options.instruments.length; i++) {
-            if (options.instruments[i] !=
-                    midiFile.getTracks().get(i).getInstrument()) {
-                options.useDefaultInstruments = false;
+            // Check whether the default instruments have changed.
+            for (int i = 0; i < options.instruments.length; i++) {
+                if (options.instruments[i] !=
+                        midiFile.getTracks().get(i).getInstrument()) {
+                    options.useDefaultInstruments = false;
+                }
             }
+
+            saveOptions();
+
+            // Recreate the sheet music with the new options
+            createSheetMusic(options);
         }
+        if(requestCode == changeNoteRequestCode) {
 
-        saveOptions();
-
-        // Recreate the sheet music with the new options
-        createSheetMusic(options);
+        }
     }
 
     private void saveOptions() {
@@ -451,5 +460,23 @@ public class TestActivity extends MidiHandlingActivity
         player.waitForTrackingStopped();
         transcription.waitForRecognitionStopped();
         transcription.waitForRecordingStopped();
+    }
+
+    public void onClickChange(View view) {
+        Intent intent = new Intent(this, ChangeNoteActivity.class);
+        String note_str = "";
+        int n_track = midiFile.getTracks().size();
+        for(int track = 0; track < midiFile.getTracks().size(); track++) {
+            ArrayList<MidiNote> notes = midiFile.getTracks().get(track).getNotes();
+            for(MidiNote note: notes) {
+                if(note.getStartTime() == sheet.getCurrentTime()) {
+                    note_str += Librosa.notename(note.getNumber()) + " ";
+                }
+            }
+        }
+        intent.putExtra(ChangeNoteName, note_str);
+        intent.putExtra(ChangeNoteTime, sheet.getCurrentTime());
+        Log.d("SheetMusic.java", note_str);
+        startActivityForResult(intent, changeNoteRequestCode);
     }
 }

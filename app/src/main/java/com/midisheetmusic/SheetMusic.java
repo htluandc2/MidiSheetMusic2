@@ -102,6 +102,8 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
     private int      scrollY;
     private ScrollAnimation scrollAnimation;
 
+    private  int currentTime;  // To detect current notes to edit
+
     public SheetMusic(Context context) {
         super(context);
         SurfaceHolder holder = getHolder();
@@ -1223,6 +1225,8 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
      *  to the shaded notes.
      */
     public void ShadeNotes(int currentPulseTime, int prevPulseTime, int scrollType) {
+//        Log.d("SheetMusic.java", prevPulseTime + " " + currentPulseTime);
+        this.currentTime = currentPulseTime;
         if (!surfaceReady || staffs == null) {
             return;
         }
@@ -1396,7 +1400,6 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
 
             case MotionEvent.ACTION_MOVE:
                 return result;
-
             case MotionEvent.ACTION_UP:
                 return result;
 
@@ -1464,6 +1467,11 @@ public class SheetMusic extends SurfaceView implements SurfaceHolder.Callback, S
         result += "End SheetMusic\n";
         return result;
     }
+
+    public int getCurrentTime() {
+        return currentTime;
+    }
+
 
 }
 

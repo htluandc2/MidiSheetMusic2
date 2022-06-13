@@ -47,6 +47,12 @@
             android:onClick="onClickSettings"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
+        <Button
+            android:id="@+id/btnChange"
+            android:text="Change"
+            android:onClick="onClickChange"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
     </LinearLayout>
 
     <LinearLayout
