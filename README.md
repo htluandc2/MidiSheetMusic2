@@ -2,6 +2,8 @@
 
 # MidiSheetMusic-android
 An app for visualizing MIDI files with extra features to make learning new pieces easier.
+With Midi recognition feature by TF-Lite.
+Please click "record" to try demo. 
 
 <div style="text-align: center">
 
