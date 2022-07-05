@@ -22,6 +22,7 @@ import com.midisheetmusic.MidiOptions;
 import com.midisheetmusic.MidiPlayer;
 import com.midisheetmusic.MidiPlayerListener;
 import com.midisheetmusic.MidiPlayerTranscription;
+import com.midisheetmusic.MidiTrack;
 import com.midisheetmusic.Piano;
 import com.midisheetmusic.R;
 import com.midisheetmusic.SettingsActivity;
@@ -49,7 +50,7 @@ public class TestActivity extends MidiHandlingActivity
     public static final String MidiTitleID = "MidiTitleID";
     public static final String ChangeNoteName = "ChangeNoteName";
     public static final String ChangeNoteTime = "ChangeNoteTime";
-    public static final int settingsRequestCode = 1;
+    public static final int settingsRequestCode   = 1;
     public static final int changeNoteRequestCode = 2;
 
     private static final int REQUEST_RECORD_AUDIO = 3;
@@ -130,7 +131,7 @@ public class TestActivity extends MidiHandlingActivity
         transcription.setOnsetsFramesTranscriptionRealtimeListener(this);
         btnRecord = findViewById(R.id.btnRecord);
         btnStop = findViewById(R.id.btnStop);
-        btnChange = findViewById(R.id.btnChange);
+
         isStopReconizing = false;
         isStopRecording = false;
         isChangingNote = false;
@@ -158,8 +159,8 @@ public class TestActivity extends MidiHandlingActivity
         options.playMeasuresInLoop = settings.getBoolean("playMeasuresInLoop", false);
         options.showLyrics = settings.getBoolean("showLyrics", true);
         options.showNoteLetters = settings.getInt("showNoteLetters", MidiOptions.NoteNameLetter);
-        options.transpose = settings.getInt("transpose", -1); // Down 1 note
-        options.midiShift = settings.getInt("midiShift", -1); // Down 1 note
+        options.transpose = settings.getInt("transpose", 0);
+        options.midiShift = settings.getInt("midiShift", 0);
         int orange = Color.rgb(255, 165, 0);
         int blue   = Color.BLUE;
         options.shade1Color = settings.getInt("shade1Color", orange);
@@ -429,7 +430,25 @@ public class TestActivity extends MidiHandlingActivity
             createSheetMusic(options);
         }
         if(requestCode == changeNoteRequestCode) {
+            String noteStr = intent.getStringExtra(ChangeNoteActivity.ChangeNoteName);
+            int currentTime= intent.getIntExtra(ChangeNoteActivity.ChangeNoteTime, -1);
+            String newNotes[] = noteStr.split("\\s+");
+            if(newNotes.length == 0 || currentTime < 0) {
+                return;
+            }
 
+            int currentNewNote = 0;
+            for(MidiTrack track: midiFile.getTracks()) {
+                ArrayList<MidiNote> notes = track.getNotes();
+                for(MidiNote note: notes) {
+                    if(note.getStartTime() == currentTime) {
+                        int newNoteNumber = Librosa.notenameToMidi(newNotes[currentNewNote]);
+                        note.setNumber(newNoteNumber);
+                        currentNewNote++;
+                    }
+                }
+            }
+            createSheetMusic(options);
         }
     }
 
@@ -470,7 +489,7 @@ public class TestActivity extends MidiHandlingActivity
             ArrayList<MidiNote> notes = midiFile.getTracks().get(track).getNotes();
             for(MidiNote note: notes) {
                 if(note.getStartTime() == sheet.getCurrentTime()) {
-                    note_str += Librosa.notename(note.getNumber()) + " ";
+                    note_str += Librosa.midiToNoteName(note.getNumber()) + " ";
                 }
             }
         }

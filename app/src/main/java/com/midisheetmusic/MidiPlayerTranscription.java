@@ -166,7 +166,6 @@ public class MidiPlayerTranscription extends MidiPlayer {
                 this.currentNoteSize++;
             }
         }
-
     }
 
     // Remember: This function need + opt.transpose
