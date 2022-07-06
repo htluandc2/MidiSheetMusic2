@@ -1,10 +1,12 @@
-[![Build status](https://build.appcenter.ms/v0.1/apps/3e640f40-a600-4159-a972-a1aae90d52a3/branches/master/badge)](https://appcenter.ms)
+(Folked from: https://github.com/ditek/MidiSheetMusic-Android)
 
-# MidiSheetMusic-android
+# MidiSheetMusic-android (and recognition piano music sheet)
+I used [MidiSheetMusic-Android from ditek](https://github.com/ditek/MidiSheetMusic-Android) and [Onsets and Frames: Realtime TFLite Demo from magenta](https://github.com/magenta/magenta/tree/main/magenta/models/onsets_frames_transcription/realtime).
+I also refer method to convert Onset and Frames into Keras to reduce model size from [PolyphonicPianoTranscription](https://github.com/BShakhovsky/PolyphonicPianoTranscription).
+
+The project is in progress. My models is very slow and not accurate. Please give me some comments and suggestion.
+
 An app for visualizing MIDI files with extra features to make learning new pieces easier.
-
-With Midi recognition feature by TF-Lite.
-Please click "record" to try demo. 
 
 <div style="text-align: center">
 
